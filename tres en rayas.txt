@@ -1,0 +1,167 @@
+public class TresEnRaya {
+    private char[][] tablero;
+    private char jugadorActual;
+
+    public TresEnRaya() {
+        tablero = new char[3][3];
+        jugadorActual = 'X';  // El jugador X empieza
+        // Inicializamos el tablero
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                tablero[i][j] = '-'; // Tablero vacío
+            }
+        }
+    }
+
+    public boolean hacerMovimiento(int fila, int columna) {
+        if (fila >= 0 && fila < 3 && columna >= 0 && columna < 3 && tablero[fila][columna] == '-') {
+            tablero[fila][columna] = jugadorActual;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean verificarGanador() {
+        // Comprobamos las filas, columnas y diagonales
+        for (int i = 0; i < 3; i++) {
+            if (tablero[i][0] == jugadorActual && tablero[i][1] == jugadorActual && tablero[i][2] == jugadorActual) {
+                return true;
+            }
+            if (tablero[0][i] == jugadorActual && tablero[1][i] == jugadorActual && tablero[2][i] == jugadorActual) {
+                return true;
+            }
+        }
+        if (tablero[0][0] == jugadorActual && tablero[1][1] == jugadorActual && tablero[2][2] == jugadorActual) {
+            return true;
+        }
+        if (tablero[0][2] == jugadorActual && tablero[1][1] == jugadorActual && tablero[2][0] == jugadorActual) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean esTableroLleno() {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (tablero[i][j] == '-') {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public void cambiarJugador() {
+        jugadorActual = (jugadorActual == 'X') ? 'O' : 'X';
+    }
+
+    public char obtenerJugadorActual() {
+        return jugadorActual;
+    }
+
+    public char[][] obtenerTablero() {
+        return tablero;
+    }
+}
+2. ControladorTresEnRaya.java (Controlador de la vista)
+java
+Copiar código
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+
+public class ControladorTresEnRaya {
+    @FXML
+    private GridPane grid;
+
+    @FXML
+    private Label etiquetaEstado;
+
+    private TresEnRaya juego;
+
+    public void initialize() {
+        juego = new TresEnRaya();
+        actualizarTablero();
+        etiquetaEstado.setText("Turno de X");
+    }
+
+    @FXML
+    public void manejarBotonClick(ActionEvent event) {
+        Button boton = (Button) event.getSource();
+        int fila = GridPane.getRowIndex(boton);
+        int columna = GridPane.getColumnIndex(boton);
+
+        if (juego.hacerMovimiento(fila, columna)) {
+            actualizarTablero();
+            if (juego.verificarGanador()) {
+                etiquetaEstado.setText("¡Jugador " + juego.obtenerJugadorActual() + " gana!");
+            } else if (juego.esTableroLleno()) {
+                etiquetaEstado.setText("¡Empate!");
+            } else {
+                juego.cambiarJugador();
+                etiquetaEstado.setText("Turno de " + juego.obtenerJugadorActual());
+            }
+        }
+    }
+
+    private void actualizarTablero() {
+        char[][] tablero = juego.obtenerTablero();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Button boton = (Button) grid.getChildren().get(i * 3 + j);
+                char casilla = tablero[i][j];
+                boton.setText(casilla == '-' ? "" : String.valueOf(casilla));
+                boton.setDisable(casilla != '-');
+            }
+        }
+    }
+}
+3. juego.fxml (Interfaz de usuario)
+xml
+Copiar código
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns:fx="http://javafx.com/fxml" fx:controller="ControladorTresEnRaya" alignment="CENTER" hgap="10" vgap="10">
+    <Label fx:id="etiquetaEstado" text="Turno de X" GridPane.columnSpan="3" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="2" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="3" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="3" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="3" GridPane.columnIndex="2" />
+</GridPane>
+4. Main.java (Clase principal para lanzar la aplicación)
+java
+Copiar código
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+public class Main extends Application {
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        StackPane root = FXMLLoader.load(getClass().getResource("juego.fxml"));
+        Scene scene = new Scene(root, 300, 350);
+        primaryStage.setTitle("Tres en Raya");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}

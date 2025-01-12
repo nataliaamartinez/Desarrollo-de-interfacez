@@ -1,0 +1,204 @@
+public class CuadradoMagico {
+    private int[][] cuadrado;
+    private Stack<int[]> historial; // Para deshacer movimientos
+
+    public CuadradoMagico() {
+        cuadrado = new int[3][3];  // Cuadrícula de 3x3
+        historial = new Stack<>();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                cuadrado[i][j] = 0; // Inicializamos todas las casillas a 0
+            }
+        }
+    }
+
+    public boolean colocarNumero(int fila, int col, int numero) {
+        if (cuadrado[fila][col] == 0) {
+            cuadrado[fila][col] = numero;
+            historial.push(new int[]{fila, col, numero});
+            return true;
+        }
+        return false;
+    }
+
+    public boolean deshacer() {
+        if (!historial.isEmpty()) {
+            int[] ultimoMovimiento = historial.pop();
+            cuadrado[ultimoMovimiento[0]][ultimoMovimiento[1]] = 0;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean esCuadradoMagico() {
+        int sumaEsperada = 15;  // La suma correcta en un cuadrado mágico 3x3
+        // Comprobamos filas, columnas y diagonales
+        for (int i = 0; i < 3; i++) {
+            if (suma(cuadrado[i]) != sumaEsperada || suma(columna(i)) != sumaEsperada) {
+                return false;
+            }
+        }
+        if (suma(diagonalPrincipal()) != sumaEsperada || suma(diagonalSecundaria()) != sumaEsperada) {
+            return false;
+        }
+        return true;
+    }
+
+    private int suma(int[] fila) {
+        int suma = 0;
+        for (int num : fila) {
+            suma += num;
+        }
+        return suma;
+    }
+
+    private int[] columna(int col) {
+        int[] columna = new int[3];
+        for (int i = 0; i < 3; i++) {
+            columna[i] = cuadrado[i][col];
+        }
+        return columna;
+    }
+
+    private int[] diagonalPrincipal() {
+        return new int[]{cuadrado[0][0], cuadrado[1][1], cuadrado[2][2]};
+    }
+
+    private int[] diagonalSecundaria() {
+        return new int[]{cuadrado[0][2], cuadrado[1][1], cuadrado[2][0]};
+    }
+
+    public int[][] obtenerCuadrado() {
+        return cuadrado;
+    }
+
+    public Stack<int[]> obtenerHistorial() {
+        return historial;
+    }
+}
+2. ControladorCuadradoMagico.java (Controlador de la interfaz gráfica)
+java
+Copiar código
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.GridPane;
+
+public class ControladorCuadradoMagico {
+    @FXML
+    private GridPane grid;
+
+    @FXML
+    private Label etiquetaEstado;
+
+    @FXML
+    private Button botonDeshacer;
+
+    private CuadradoMagico juego;
+    private int siguienteNumero;
+
+    public void initialize() {
+        juego = new CuadradoMagico();
+        siguienteNumero = 1; // Empezamos con el 1
+        etiquetaEstado.setText("Coloca el número: " + siguienteNumero);
+        botonDeshacer.setDisable(true); // Deshabilitamos el deshacer al inicio
+        actualizarTablero();
+    }
+
+    @FXML
+    public void manejarBotonClick(ActionEvent event) {
+        Button boton = (Button) event.getSource();
+        int fila = GridPane.getRowIndex(boton);
+        int col = GridPane.getColumnIndex(boton);
+
+        if (juego.colocarNumero(fila, col, siguienteNumero)) {
+            boton.setText(String.valueOf(siguienteNumero));
+            siguienteNumero++;
+            etiquetaEstado.setText("Coloca el número: " + siguienteNumero);
+
+            if (siguienteNumero > 9) {
+                if (juego.esCuadradoMagico()) {
+                    etiquetaEstado.setText("¡Ganaste!");
+                } else {
+                    etiquetaEstado.setText("¡Error! No es un cuadrado mágico.");
+                }
+                botonDeshacer.setDisable(true);
+            }
+        }
+    }
+
+    @FXML
+    public void manejarDeshacer(ActionEvent event) {
+        if (juego.deshacer()) {
+            siguienteNumero--;
+            etiquetaEstado.setText("Coloca el número: " + siguienteNumero);
+            actualizarTablero();
+            botonDeshacer.setDisable(juego.obtenerHistorial().isEmpty());
+        }
+    }
+
+    private void actualizarTablero() {
+        int[][] cuadrado = juego.obtenerCuadrado();
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                Button boton = (Button) grid.getChildren().get(i * 3 + j);
+                if (cuadrado[i][j] != 0) {
+                    boton.setText(String.valueOf(cuadrado[i][j]));
+                } else {
+                    boton.setText("");
+                }
+                boton.setDisable(cuadrado[i][j] != 0);
+            }
+        }
+    }
+}
+3. cuadradoMagico.fxml (Interfaz de usuario)
+xml
+Copiar código
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.GridPane?>
+
+<GridPane xmlns:fx="http://javafx.com/fxml" fx:controller="ControladorCuadradoMagico" alignment="CENTER" hgap="10" vgap="10">
+    <Label fx:id="etiquetaEstado" text="Coloca el número: 1" GridPane.columnSpan="3" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="0" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="0" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="0" GridPane.columnIndex="2" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="1" GridPane.columnIndex="2" />
+    
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="1" />
+    <Button text="" onAction="#manejarBotonClick" GridPane.rowIndex="2" GridPane.columnIndex="2" />
+    
+    <Button text="Deshacer" fx:id="botonDeshacer" onAction="#manejarDeshacer" GridPane.rowIndex="3" GridPane.columnSpan="3"/>
+</GridPane>
+4. Main.java (Clase principal)
+java
+Copiar código
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
+import javafx.stage.Stage;
+
+public class Main extends Application {
+
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        StackPane root = FXMLLoader.load(getClass().getResource("cuadradoMagico.fxml"));
+        Scene scene = new Scene(root, 300, 350);
+        primaryStage.setTitle("Cuadrado Mágico");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
